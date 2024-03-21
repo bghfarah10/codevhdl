@@ -1,0 +1,54 @@
+library IEEE;
+use IEEE.STD_LOGIC_1164.ALL;
+
+entity StepperMotorControl is
+    Port ( clk : in STD_LOGIC;
+           rst : in STD_LOGIC;
+           step : out STD_LOGIC;
+           direction : out STD_LOGIC );
+end StepperMotorControl;
+
+architecture Behavioral of StepperMotorControl is
+    constant STEPS_PER_REV : integer := 200; -- Number of steps per revolution
+    signal step_counter : integer range 0 to STEPS_PER_REV - 1 := 0; -- Step counter
+    
+    -- Define states for direction control
+    type Direction_State is (CW, CCW);
+    signal direction_state : Direction_State := CW; -- Initial direction is clockwise
+    
+begin
+    process(clk, rst)
+    begin
+        if rst = '1' then
+            step_counter <= 0; -- Reset step counter
+            direction_state <= CW; -- Reset direction to clockwise
+            step <= '0'; -- Initialize step signal
+            direction <= '0'; -- Initialize direction signal
+        elsif rising_edge(clk) then
+            -- Step generation logic
+            if step_counter = STEPS_PER_REV - 1 then
+                step_counter <= 0; -- Reset step counter
+                -- Change direction after completing one revolution
+                if direction_state = CW then
+                    direction_state <= CCW;
+                else
+                    direction_state <= CW;
+                end if;
+                -- Update direction signal
+                if direction_state = CW then
+                    direction <= '0'; -- Set direction to clockwise
+                else
+                    direction <= '1'; -- Set direction to counter-clockwise
+                end if;
+            else
+                step_counter <= step_counter + 1; -- Increment step counter
+            end if;
+            -- Generate step pulse
+            if step_counter < STEPS_PER_REV / 2 then
+                step <= '1'; -- Set step signal high
+            else
+                step <= '0'; -- Set step signal low
+            end if;
+        end if;
+    end process;
+end Behavioral;
